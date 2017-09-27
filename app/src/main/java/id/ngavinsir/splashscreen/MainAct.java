@@ -11,6 +11,7 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -27,6 +28,18 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
+
+import org.json.JSONObject;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -34,6 +47,8 @@ import java.util.Arrays;
 
 public class MainAct extends AppCompatActivity {
 
+    private final String API_ACCESS_KEY_URL
+            = "http://apilayer.net/api/live?access_key=51cbe33823dfe3f6e5112825d9a88dbd&currencies=USD,IDR,GBP,JPY,KRW,EUR";
     private final double VAL_POUND1 = 453.592;
     private final double VAL_POUND2 = 0.00220462;
     private final double VAL_KG1 = 1000;
@@ -68,7 +83,7 @@ public class MainAct extends AppCompatActivity {
     private final double VAL_I2 = 39370.1;
     private final double VAL_NM1 = 1.852;
     private final double VAL_NM2 = 0.539957;
-    private final double VAL_D1 = 111.59;
+    /*private final double VAL_D1 = 111.59;
     private final double VAL_D2 = .008965;
     private final double VAL_IDR1 = 0.008394;
     private final double VAL_IDR2 = 118.99;
@@ -79,7 +94,13 @@ public class MainAct extends AppCompatActivity {
     private final double VAL_J1 = 1.00096;
     private final double VAL_J2 = 0.999041;
     private final double VAL_W1 = 0.098904;
-    private final double VAL_W2 = 10.11;
+    private final double VAL_W2 = 10.11;**/
+    private double USD = 1;
+    private double IDR = 1;
+    private double EUR = 1;
+    private double GBP = 1;
+    private double JPY = 1;
+    private double KRW = 1;
 
     LinearLayout revealView, buttons;
     RelativeLayout row1, row2;
@@ -108,6 +129,7 @@ public class MainAct extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        currencyAPI();
         setTheme(R.style.AppTheme_NoActionBar);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.act_main);
@@ -220,7 +242,76 @@ public class MainAct extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        introHandle.postDelayed(introRun, 3500L);
+        //introHandle.postDelayed(introRun, 3500L);
+    }
+
+    private void currencyAPI()
+    {
+        RequestQueue q = Volley.newRequestQueue(this);
+        /*StringRequest req = new StringRequest(Request.Method.GET, API_ACCESS_KEY_URL, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response)
+            {
+                setCurrencyVal(response);
+                introHandle.post(introRun);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+
+            }
+        });**/
+        JsonObjectRequest req = new JsonObjectRequest(Request.Method.GET, API_ACCESS_KEY_URL,
+                null, new Response.Listener<JSONObject>() {
+            @Override
+            public void onResponse(JSONObject response) {
+                setCurrencyVal(response);
+                introHandle.postDelayed(introRun, 700L);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.d("T", "TIMEOUT");
+                introHandle.post(introRun);
+            }
+        });
+        int socketTimeout = 10000;
+        RetryPolicy policy = new DefaultRetryPolicy(socketTimeout, DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
+                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+        req.setRetryPolicy(policy);
+        q.add(req);
+    }
+
+    private void setCurrencyVal(JSONObject json)
+    {
+        //JSONObject j;
+        JSONObject job;
+        try
+        {
+            //j = new JSONObject(json);
+            //job = j.getJSONObject("quotes");
+            job = json.getJSONObject("quotes");
+        } catch(Throwable t)
+        {
+            return;
+        }
+
+        //if(j != null && job != null)
+        if(job != null)
+        {
+            try
+            {
+
+                IDR = job.getDouble("USDIDR");
+                EUR = job.getDouble("USDEUR");
+                GBP = job.getDouble("USDGBP");
+                JPY = job.getDouble("USDJPY");
+                KRW = job.getDouble("USDKRW");
+            }catch(Throwable t)
+            {
+
+            }
+        }
     }
 
     public void setupCalculator()
@@ -578,17 +669,17 @@ public class MainAct extends AppCompatActivity {
             case 0:
                 switch (spec1) {
                     case 0:
-                        return VAL_D1;
+                        return 1/USD;
                     case 1:
-                        return VAL_IDR1;
+                        return 1/IDR;
                     case 2:
-                        return VAL_EU1;
+                        return 1/EUR;
                     case 3:
-                        return VAL_BR1;
+                        return 1/GBP;
                     case 4:
-                        return VAL_J1;
+                        return 1/JPY;
                     case 5:
-                        return VAL_W1;
+                        return 1/KRW;
                 }
                 break;
             case 1:
@@ -652,17 +743,17 @@ public class MainAct extends AppCompatActivity {
             case 0:
                 switch (spec2) {
                     case 0:
-                        return VAL_D2;
+                        return USD;
                     case 1:
-                        return VAL_IDR2;
+                        return IDR;
                     case 2:
-                        return VAL_EU2;
+                        return EUR;
                     case 3:
-                        return VAL_BR2;
+                        return GBP;
                     case 4:
-                        return VAL_J2;
+                        return JPY;
                     case 5:
-                        return VAL_W2;
+                        return KRW;
                 }
                 break;
             case 1:
